@@ -8,7 +8,7 @@ type Latest = {
   released: string;
   macos: Installer;
   windows: Installer;
-  testflight: string;
+  ios: { url: string };
 };
 
 // Matches the backend's per-address max_frequency so resend never fires early into
@@ -172,7 +172,7 @@ async function showDownloads() {
     <div class="group">
       <p class="group-label">iPad</p>
       <div class="buttons">
-        <a class="btn" href="${esc(data.testflight)}" target="_blank" rel="noopener">${APPLE_ICON}<span>Join the TestFlight beta</span></a>
+        <a class="btn" href="${esc(data.ios.url)}" target="_blank" rel="noopener">${APPLE_ICON}<span>Join the TestFlight beta</span></a>
       </div>
     </div>
     <button id="logout" class="link-btn" type="button">Sign out</button>`;
