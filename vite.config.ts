@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 
-// Single-page static site served at app.grasp.it (root domain → base '/').
+// Single-page static site. Relative base so assets resolve both at the
+// app.grasp.it root domain and at the github.io/<repo>/ project-pages URL.
 export default defineConfig({
-  base: "/",
+  base: "./",
 });
