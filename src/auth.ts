@@ -1,23 +1,22 @@
 import { createClient, type User } from "@supabase/supabase-js";
-import { ANON_KEY, DOWNLOAD_URL, SUPABASE_URL } from "./config";
+import { ANON_KEY, SUPABASE_URL } from "./config";
 
 // Single client for the whole origin. persistSession keeps the tester signed in
-// across /join, /download and future platform pages; detectSessionInUrl consumes
-// the tokens from the Confirm signup redirect.
+// across the app and future platform pages. Auth is code-based end to end, so no
+// email carries a link and there is no redirect to detect.
 const supabase = createClient(SUPABASE_URL, ANON_KEY, {
   auth: {
     persistSession: true,
-    detectSessionInUrl: true,
+    detectSessionInUrl: false,
   },
 });
 
-/** Send an OTP. `create` gates new-user signup: true on /join, false everywhere else. */
+/** Send an OTP. `create` gates new-user signup: true in the web funnel, false in the app. */
 export function requestCode(email: string, opts: { create: boolean }) {
   return supabase.auth.signInWithOtp({
     email,
     options: {
       shouldCreateUser: opts.create,
-      emailRedirectTo: DOWNLOAD_URL,
     },
   });
 }
