@@ -44,7 +44,7 @@ async function showDownloads() {
   }
 
   downloads.innerHTML = `
-    <h1>Download Grasp</h1>
+    <h1>Download Grasp It</h1>
     <p class="version">Version ${esc(data.version)} · ${esc(data.released)}</p>
     <div class="buttons">
       ${installerButton("Download for macOS", data.macos)}
@@ -62,7 +62,7 @@ function showEmailStep() {
   gate.hidden = false;
   downloads.hidden = true;
   gate.innerHTML = `
-    <h1>Download Grasp</h1>
+    <h1>Download Grasp It</h1>
     <p>Enter your email to get a sign-in code.</p>
     <form id="email-form">
       <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required />
