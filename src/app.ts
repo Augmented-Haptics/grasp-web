@@ -1,14 +1,18 @@
 import "./styles.css";
-import { LATEST_JSON_URL } from "./config";
+import { ANON_KEY, LATEST_RELEASE_URL } from "./config";
 import { getUser, requestCode, signOut, verifyCode } from "./auth";
 
 type Installer = { url: string; size?: number };
 type Latest = {
   version: string;
-  released: string;
-  macos: Installer;
-  windows: Installer;
-  ios: { url: string };
+  released_at: string;
+  installers: {
+    macos: Installer;
+    windows: Installer;
+    ios: { url: string };
+    // Present from the first release that ships an apk.
+    android?: Installer;
+  };
 };
 
 // Matches the backend's per-address max_frequency so resend never fires early into
@@ -18,6 +22,8 @@ const RESEND_DELAY = 30;
 // Inline brand glyphs, tinted via currentColor.
 const APPLE_ICON =
   `<svg class="icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.51 4.09z"/><path d="M12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>`;
+const ANDROID_ICON =
+  `<svg class="icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M18.4395 5.5586c-.675 1.1664-1.352 2.3318-2.0274 3.498-.0366-.0155-.0742-.0286-.1113-.043-1.8249-.6957-3.484-.8-4.42-.787-1.8551.0185-3.3544.4643-4.2597.8203-.084-.1494-1.7526-3.021-2.0215-3.4864a1.1451 1.1451 0 0 0-.1406-.1914c-.3312-.364-.9054-.4859-1.379-.203-.475.282-.7136.9361-.3886 1.5019 1.9466 3.3696-.0966-.2158 1.9473 3.3593.0172.031-.4946.2642-1.3926 1.0177C2.8987 12.176.452 14.772 0 18.9902h24c-.119-1.1108-.3686-2.099-.7461-3.0683-.7438-1.9118-1.8435-3.2928-2.7402-4.1836a12.1048 12.1048 0 0 0-2.1309-1.6875c.6594-1.122 1.312-2.2559 1.9649-3.3848.2077-.3615.1886-.7956-.0079-1.1191a1.1001 1.1001 0 0 0-.8515-.5332c-.5225-.0536-.9392.3128-1.0488.5449zm-.0391 8.461c.3944.5926.324 1.3306-.1563 1.6503-.4799.3197-1.188.0985-1.582-.4941-.3944-.5927-.324-1.3307.1563-1.6504.4727-.315 1.1812-.1086 1.582.4941zM7.207 13.5273c.4803.3197.5506 1.0577.1563 1.6504-.394.5926-1.1038.8138-1.584.4941-.48-.3197-.5503-1.0577-.1563-1.6504.4008-.6021 1.1087-.8106 1.584-.4941z"/></svg>`;
 const WINDOWS_ICON =
   `<svg class="icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M3 5.1 10.4 4v7.3H3V5.1zm0 13.8 7.4 1v-7.2H3v6.2zM11.3 3.9 21 2.5v8.8h-9.7V3.9zm0 8.4H21v8.8l-9.7-1.4v-7.4z"/></svg>`;
 
@@ -150,9 +156,15 @@ async function showDownloads() {
 
   let data: Latest;
   try {
-    const res = await fetch(LATEST_JSON_URL, { cache: "no-store" });
+    const res = await fetch(LATEST_RELEASE_URL, {
+      cache: "no-store",
+      headers: { apikey: ANON_KEY },
+    });
     if (!res.ok) throw new Error(String(res.status));
-    data = (await res.json()) as Latest;
+    // PostgREST returns a row array; the view yields at most one row.
+    const rows = (await res.json()) as Latest[];
+    if (rows.length === 0) throw new Error("empty");
+    data = rows[0];
   } catch {
     view.innerHTML =
       `<p class="status error">Couldn't load the download list. Please try again later.</p>`;
@@ -161,18 +173,19 @@ async function showDownloads() {
 
   view.innerHTML = `
     <h1>Download the Grasp It app</h1>
-    <p class="version">Version ${esc(data.version)} · ${esc(data.released)}</p>
+    <p class="version">Version ${esc(data.version)} · ${esc(data.released_at)}</p>
     <div class="group">
       <p class="group-label">Desktop</p>
       <div class="buttons">
-        ${installerButton("Download for macOS", data.macos, APPLE_ICON)}
-        ${installerButton("Download for Windows", data.windows, WINDOWS_ICON)}
+        ${installerButton("Download for macOS", data.installers.macos, APPLE_ICON)}
+        ${installerButton("Download for Windows", data.installers.windows, WINDOWS_ICON)}
       </div>
     </div>
     <div class="group">
-      <p class="group-label">iPad</p>
+      <p class="group-label">Tablet</p>
       <div class="buttons">
-        <a class="btn" href="${esc(data.ios.url)}" target="_blank" rel="noopener">${APPLE_ICON}<span>Join the TestFlight beta</span></a>
+        <a class="btn" href="${esc(data.installers.ios.url)}" target="_blank" rel="noopener">${APPLE_ICON}<span>Join the iPad TestFlight beta</span></a>
+        ${data.installers.android ? installerButton("Download for Android", data.installers.android, ANDROID_ICON) : ""}
       </div>
     </div>
     <button id="logout" class="link-btn" type="button">Sign out</button>`;

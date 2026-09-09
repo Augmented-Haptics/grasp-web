@@ -5,6 +5,6 @@ export const SUPABASE_URL = "https://cwivjpdoicmzdxuaeksg.supabase.co";
 
 export const ANON_KEY = "sb_publishable_EO1ytheMt5-iBTyPeGTYYQ_gW9TMxEH";
 
-// Stable pointer to the current build, maintained by the release process.
-export const LATEST_JSON_URL =
-  "https://cwivjpdoicmzdxuaeksg.supabase.co/storage/v1/object/public/downloads/latest.json";
+// Newest row of app_releases, maintained by the release process.
+export const LATEST_RELEASE_URL =
+  `${SUPABASE_URL}/rest/v1/latest_release?select=version,released_at,installers`;

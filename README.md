@@ -16,7 +16,7 @@ npm run preview    # serve the built dist/
 ## Config
 
 `src/config.ts` holds the public Supabase URL, publishable anon key, and the
-`latest.json` pointer. All values are safe in a static bundle; RLS and the runtime
+`latest_release` query URL. All values are safe in a static bundle; RLS and the runtime
 OTP gate are the protection.
 
 ## Deploy
