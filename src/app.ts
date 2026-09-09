@@ -6,11 +6,11 @@ type Installer = { url: string; size?: number };
 type Latest = {
   version: string;
   released_at: string;
+  // Platforms are published one at a time, so any entry may be missing.
   installers: {
-    macos: Installer;
-    windows: Installer;
-    ios: { url: string };
-    // Present from the first release that ships an apk.
+    macos?: Installer;
+    windows?: Installer;
+    ios?: { url: string };
     android?: Installer;
   };
 };
@@ -184,8 +184,8 @@ async function showDownloads() {
     <div class="group">
       <p class="group-label">Tablet</p>
       <div class="buttons">
-        <a class="btn" href="${esc(data.installers.ios.url)}" target="_blank" rel="noopener">${APPLE_ICON}<span>Join the iPad TestFlight beta</span></a>
-        ${data.installers.android ? installerButton("Download for Android", data.installers.android, ANDROID_ICON) : ""}
+        ${data.installers.ios ? `<a class="btn" href="${esc(data.installers.ios.url)}" target="_blank" rel="noopener">${APPLE_ICON}<span>Join the iPad TestFlight beta</span></a>` : ""}
+        ${installerButton("Download for Android", data.installers.android, ANDROID_ICON)}
       </div>
     </div>
     <button id="logout" class="link-btn" type="button">Sign out</button>`;
@@ -196,7 +196,9 @@ async function showDownloads() {
   });
 }
 
-function installerButton(label: string, installer: Installer, icon: string) {
+/** Empty when the release has no installer for that platform yet. */
+function installerButton(label: string, installer: Installer | undefined, icon: string) {
+  if (!installer) return "";
   const size = installer.size ? ` <span class="size">${formatSize(installer.size)}</span>` : "";
   return `<a class="btn" href="${esc(installer.url)}">${icon}<span>${label}${size}</span></a>`;
 }
