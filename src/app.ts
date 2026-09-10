@@ -1,6 +1,7 @@
 import "./styles.css";
 import { ANON_KEY, LATEST_RELEASE_URL } from "./config";
 import { getUser, requestCode, signOut, verifyCode } from "./auth";
+import { fetchCampaign, submitLead, type Campaign } from "./leads";
 
 type Installer = { url: string; size?: number };
 type Latest = {
@@ -34,6 +35,14 @@ const view = document.querySelector<HTMLDivElement>("#view")!;
 init();
 
 async function init() {
+  // ?join=<campaign> is the event funnel: collect contact details now, the
+  // account comes later through the normal email → code flow.
+  const join = new URLSearchParams(location.search).get("join");
+  if (join) {
+    await showJoin(join);
+    return;
+  }
+
   view.innerHTML = `<p class="status">Checking your session…</p>`;
   const user = await getUser();
   if (user) {
@@ -148,6 +157,97 @@ function showCodeStep(email: string) {
     }
 
     await showDownloads();
+  });
+}
+
+async function showJoin(key: string) {
+  view.innerHTML = `<p class="status">Loading…</p>`;
+
+  let campaign: Campaign | null;
+  try {
+    campaign = await fetchCampaign(key);
+  } catch {
+    view.innerHTML = `<p class="status error">Something went wrong. Please try again later.</p>`;
+    return;
+  }
+  if (!campaign) {
+    view.innerHTML = `
+      <h1>Unknown signup link</h1>
+      <p class="subtitle">Check the link or QR code you used.</p>`;
+    return;
+  }
+  if (!campaign.active) {
+    showJoinClosed();
+    return;
+  }
+  showJoinForm(campaign);
+}
+
+function showJoinClosed() {
+  view.innerHTML = `
+    <h1>This signup is closed</h1>
+    <p class="subtitle">Thanks for your interest.</p>`;
+}
+
+function showJoinForm(campaign: Campaign) {
+  view.innerHTML = `
+    <h1>${esc(campaign.label)}</h1>
+    <p class="subtitle">Leave your details and we'll email you everything you need to try Grasp It.</p>
+    <form id="join-form">
+      <input id="name" type="text" placeholder="Your name" autocomplete="name" maxlength="120" required />
+      <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+      <label class="check">
+        <input id="newsletter" type="checkbox" />
+        <span>Keep me posted about Grasp It</span>
+      </label>
+      <button type="submit">Sign up</button>
+    </form>
+    <p id="status" class="status"></p>
+    <p class="fine">By signing up, you agree to our
+      <a href="https://legal.grasp.it/privacy.html" target="_blank" rel="noopener">Privacy Statement</a>.</p>`;
+
+  const form = view.querySelector<HTMLFormElement>("#join-form")!;
+  const nameInput = view.querySelector<HTMLInputElement>("#name")!;
+  const emailInput = view.querySelector<HTMLInputElement>("#email")!;
+  const newsletterInput = view.querySelector<HTMLInputElement>("#newsletter")!;
+  const status = view.querySelector<HTMLParagraphElement>("#status")!;
+  const btn = form.querySelector<HTMLButtonElement>("button")!;
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const name = nameInput.value.trim();
+    const email = emailInput.value.trim();
+    if (!name || !email) return;
+
+    setLoading(btn, true, "Sign up");
+    status.className = "status";
+    status.textContent = "";
+
+    const result = await submitLead({
+      name,
+      email,
+      campaign: campaign.key,
+      newsletter: newsletterInput.checked,
+    });
+
+    if (result === "closed") {
+      showJoinClosed();
+      return;
+    }
+    if (result === "error") {
+      setLoading(btn, false, "Sign up");
+      status.className = "status error";
+      status.textContent = "Something went wrong. Please try again.";
+      return;
+    }
+
+    view.innerHTML = `
+      <h1>Thanks, ${esc(name)}!</h1>
+      <p class="subtitle">We'll be in touch by email soon.</p>
+      <button id="another" class="link-btn" type="button">Sign up another person</button>`;
+    // Shared tablet at a booth: reset without reloading.
+    view.querySelector<HTMLButtonElement>("#another")!
+      .addEventListener("click", () => showJoinForm(campaign));
   });
 }
 
