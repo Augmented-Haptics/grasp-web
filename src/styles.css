@@ -32,7 +32,10 @@ body {
   display: grid;
   place-items: center;
   padding: 40px 16px;
-  background: var(--gray-0);
+  /* Darkened so the card and text keep their contrast over the photo. */
+  background:
+    linear-gradient(rgba(10, 10, 12, 0.55), rgba(10, 10, 12, 0.7)),
+    var(--gray-0) url("/background.webp") center / cover no-repeat fixed;
   color: var(--gray-11);
   font: 16px/1.5 var(--sans);
 }
@@ -45,7 +48,9 @@ body {
   width: 100%;
   max-width: 400px;
   padding: 36px 32px 28px;
-  background: var(--gray-2);
+  background: rgba(28, 28, 32, 0.86);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--gray-4);
   border-radius: 16px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
@@ -116,6 +121,47 @@ form {
   margin-top: 24px;
 }
 
+/* Checkbox row in the join form. */
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 4px;
+  font-size: 14px;
+  text-align: left;
+  color: var(--gray-9);
+  cursor: pointer;
+}
+
+/* Same surface, border and focus ring as the text inputs. */
+.check input {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  flex: none;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.check input:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.check input:checked::after {
+  content: "";
+  width: 6px;
+  height: 11px;
+  margin-top: -2px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
 .form-narrow {
   max-width: 240px;
   margin: 0 auto;
@@ -128,7 +174,7 @@ input {
   color: var(--gray-11);
   background: var(--gray-1);
   border: 1px solid var(--gray-4);
-  border-radius: 8px;
+  border-radius: 12px;
   text-align: center;
 }
 
