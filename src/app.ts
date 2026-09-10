@@ -37,26 +37,32 @@ init();
 async function init() {
   // ?join=<campaign> is the event funnel: collect contact details now, the
   // account comes later through the normal email → code flow.
-  const join = new URLSearchParams(location.search).get("join");
+  const params = new URLSearchParams(location.search);
+  const join = params.get("join");
   if (join) {
     await showJoin(join);
     return;
   }
+
+  // ?email= prefills the email step, for links in the send-out mail. Dropped
+  // from the URL so a reload or bookmark does not carry it around.
+  const prefill = params.get("email") ?? "";
+  if (prefill) history.replaceState(null, "", location.pathname);
 
   view.innerHTML = `<p class="status">Checking your session…</p>`;
   const user = await getUser();
   if (user) {
     await showDownloads();
   } else {
-    showEmailStep();
+    showEmailStep(prefill);
   }
 }
 
-function showEmailStep() {
+function showEmailStep(prefill = "") {
   view.innerHTML = `
     <h1>Get early access to Grasp It</h1>
     <form id="email-form">
-      <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+      <input id="email" type="email" placeholder="you@example.com" autocomplete="email" value="${esc(prefill)}" required />
       <button type="submit">Continue with email</button>
     </form>
     <p id="status" class="status"></p>
@@ -113,7 +119,7 @@ function showCodeStep(email: string) {
   const resendSlot = view.querySelector<HTMLDivElement>("#resend")!;
   codeInput.focus();
 
-  backBtn.addEventListener("click", showEmailStep);
+  backBtn.addEventListener("click", () => showEmailStep());
 
   // The resend link is withheld at first, then appears; each use restarts the wait.
   const revealResend = () => {
