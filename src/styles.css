@@ -276,8 +276,13 @@ button[type="submit"]:disabled {
   display: none;
 }
 
+/* Tinted panel rather than red text, which reads harsh on the dark card. */
 .status.error {
-  color: var(--error);
+  padding: 10px 14px;
+  color: var(--gray-9);
+  background: rgba(245, 69, 69, 0.12);
+  border: 1px solid rgba(245, 69, 69, 0.35);
+  border-radius: 12px;
 }
 
 .status.success {
@@ -336,12 +341,14 @@ button[type="submit"]:disabled {
 }
 
 .fine a,
+.status a,
 .support a {
   color: var(--accent);
   text-decoration: none;
 }
 
 .fine a:hover,
+.status a:hover,
 .support a:hover {
   text-decoration: underline;
 }

@@ -60,7 +60,7 @@ async function init() {
 
 function showEmailStep(prefill = "") {
   view.innerHTML = `
-    <h1>Get early access to Grasp It</h1>
+    <h1>Sign in to Grasp It</h1>
     <form id="email-form">
       <input id="email" type="email" placeholder="you@example.com" autocomplete="email" value="${esc(prefill)}" required />
       <button type="submit">Continue with email</button>
@@ -90,9 +90,13 @@ function showEmailStep(prefill = "") {
     if (error) {
       setLoading(btn, false, "Continue with email");
       status.className = "status error";
-      status.textContent = error.status === 429
-        ? "Too many requests. Wait a minute and try again."
-        : "Something went wrong. Please try again.";
+      if (error.code === "signup_disabled") {
+        status.innerHTML = `Accounts are by invitation only.<br>Get in touch at <a href="mailto:contact@grasp.it">contact@grasp.it</a>.`;
+      } else {
+        status.textContent = error.status === 429
+          ? "Too many requests. Wait a minute and try again."
+          : "Something went wrong. Please try again.";
+      }
       return;
     }
 
@@ -158,7 +162,10 @@ function showCodeStep(email: string) {
     if (error) {
       setLoading(verifyBtn, false, "Verify");
       status.className = "status error";
-      status.textContent = "That code didn't work. Check it and try again.";
+      // The backend's access hook refuses expired entitlements with this message.
+      status.textContent = error.status === 403 && error.message === "access_expired"
+        ? "Your access has ended."
+        : "That code didn't work. Check it and try again.";
       return;
     }
 
