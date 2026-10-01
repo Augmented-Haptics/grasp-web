@@ -1,6 +1,6 @@
 # grasp-web
 
-`app.grasp.it` — gated signup and download for Grasp It. Static multi-page site
+`app.grasp.it` — invite-only sign-in and download for Grasp It. Static multi-page site
 (Vite + TypeScript) deployed to GitHub Pages. Single origin so the Supabase session
 extends to future platform/profile pages.
 
